@@ -181,7 +181,7 @@ const CartPage = () => {
         preco: product.price,
       })),
     })}`;
-    const url = `https://api.whatsapp.com/send?phone=${
+    const url = `https://api.whatsapp.com/send?phone=55${
       user?.user_metadata?.phone ?? ""
     }&text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");

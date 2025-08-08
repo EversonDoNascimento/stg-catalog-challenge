@@ -91,7 +91,7 @@ const Header = () => {
                   leaveTo="opacity-0 translate-y-1"
                 >
                   <PopoverPanel className="absolute right-0 mt-2 w-48 bg-white dark:bg-background border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10">
-                    <div className="py-1 bg-white dark:bg-background rounded-md">
+                    <div className="py-1 bg-white  rounded-md">
                       <Link
                         href="/profile"
                         className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-primary dark:hover:text-white"
@@ -134,7 +134,7 @@ const Header = () => {
                 leaveTo="opacity-0 scale-95"
               >
                 <PopoverPanel className="absolute right-0 top-12 w-56 bg-white dark:bg-background border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-20">
-                  <div className="p-4 space-y-2 bg-white dark:bg-background rounded-md">
+                  <div className="p-4 space-y-2 bg-white  rounded-md">
                     <Link
                       href="/cart"
                       className="flex items-center justify-between hover:text-primary"
