@@ -136,13 +136,6 @@ const Header = () => {
                 <PopoverPanel className="absolute right-0 top-12 w-56 bg-white dark:bg-background border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-20">
                   <div className="p-4 space-y-2 bg-white dark:bg-background rounded-md">
                     <Link
-                      href="/favoritos"
-                      className="block hover:text-primary"
-                    >
-                      Favoritos
-                    </Link>
-
-                    <Link
                       href="/cart"
                       className="flex items-center justify-between hover:text-primary"
                     >
@@ -163,13 +156,13 @@ const Header = () => {
                       // Mobile: logado → menu completo
                       <>
                         <Link
-                          href="/perfil"
+                          href="/profile"
                           className="block hover:text-primary"
                         >
                           Meu Perfil
                         </Link>
                         <Link
-                          href="/pedidos"
+                          href="/orders"
                           className="block hover:text-primary"
                         >
                           Meus Pedidos
