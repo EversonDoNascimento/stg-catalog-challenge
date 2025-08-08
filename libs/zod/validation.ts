@@ -7,12 +7,12 @@ export const loginSchema = z.object({
 
 export type LoginData = z.infer<typeof loginSchema>;
 
-// Validação de registro
 export const registerSchema = z
   .object({
     email: z.string().email("Email inválido"),
     confirmEmail: z.string(),
     password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+    name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
     confirmPassword: z.string(),
     phone: z
       .string()

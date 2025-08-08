@@ -135,7 +135,7 @@ const Home = () => {
     fetchProducts();
   }, [category]);
   return (
-    <ProtectedRoute>
+    <>
       <FeedbackModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -184,35 +184,36 @@ const Home = () => {
             Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} width="24rem" height="24rem" />
             ))}
-          {products.length === 0 && (
+          {products.length === 0 ? (
             <h2 className="text-2xl font-bold text-foreground  ml-8 md:ml-12">
               Nenhum produto encontrado
             </h2>
-          )}
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              isInTheCart={cart.items.some(
-                (item) => item.product_id === product.id
-              )}
-              onAddOrRemoveToCart={() => {
-                const findProduct = cart.items.find(
+          ) : (
+            products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                isInTheCart={cart.items.some(
                   (item) => item.product_id === product.id
-                );
-                if (!findProduct) {
-                  handleAddToCart(product);
-                  return;
-                }
-                handleRemoveFromCart(product);
-              }}
-            />
-          ))}
+                )}
+                onAddOrRemoveToCart={() => {
+                  const findProduct = cart.items.find(
+                    (item) => item.product_id === product.id
+                  );
+                  if (!findProduct) {
+                    handleAddToCart(product);
+                    return;
+                  }
+                  handleRemoveFromCart(product);
+                }}
+              />
+            ))
+          )}
         </div>
       </main>
 
       <Footer></Footer>
-    </ProtectedRoute>
+    </>
   );
 };
 

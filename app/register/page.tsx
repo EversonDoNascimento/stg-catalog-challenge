@@ -17,8 +17,8 @@ export default function RegisterPage() {
   } = useForm<RegisterData>({
     resolver: zodResolver(registerSchema),
   });
-  const [loading, setLoading] = useState(false);
 
+  const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState<"error" | "success" | "info">(
@@ -33,6 +33,7 @@ export default function RegisterPage() {
     setModalType(type);
     setModalOpen(true);
   };
+
   const onSubmit = async (formData: RegisterData) => {
     setLoading(true);
 
@@ -41,19 +42,27 @@ export default function RegisterPage() {
       password: formData.password,
       options: {
         data: {
+          name: formData.name,
           phone: formData.phone,
         },
       },
     });
+
+    if (!error) {
+      await supabase.auth.updateUser({
+        data: { name: formData.name, phone: formData.phone },
+      });
+    }
+
     setLoading(false);
     if (error) {
       showModal("Erro ao criar conta", "error");
-      console.error("Erro ao fazer login:", error.message);
+      console.error("Erro ao criar conta:", error.message);
       return;
     }
 
     showModal(
-      "Conta criada com sucesso! Por favor verifique seu email para ativar sua conta",
+      "Conta criada com sucesso! Verifique seu e-mail para ativar a conta.",
       "success"
     );
   };
@@ -70,6 +79,7 @@ export default function RegisterPage() {
       <Head>
         <title>Registro</title>
       </Head>
+
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
           <h2 className="text-2xl font-bold text-primary mb-6 text-center">
@@ -77,7 +87,24 @@ export default function RegisterPage() {
           </h2>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            {/* Email */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground">
+                Nome
+              </label>
+              <input
+                type="text"
+                className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${
+                  errors.name ? "border-danger" : "border-gray-300"
+                }`}
+                {...register("name")}
+              />
+              {errors.name && (
+                <p className="text-danger text-sm mt-1">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-foreground">
                 Email
@@ -96,7 +123,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Confirmar Email */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-foreground">
                 Confirmar Email
@@ -115,7 +141,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Senha */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-foreground">
                 Senha
@@ -134,7 +159,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Confirmar Senha */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-foreground">
                 Confirmar Senha
@@ -153,7 +177,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Telefone */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-foreground">
                 Telefone
@@ -180,6 +203,7 @@ export default function RegisterPage() {
               Registrar
             </button>
           </form>
+
           <div className="w-full text-center mt-8">
             <p>
               Já possui uma conta?{" "}

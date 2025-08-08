@@ -6,35 +6,97 @@ import ProtectedRoute from "@/components/ProtectedRoutes";
 import FeedbackModal from "@/components/FeedbackModal";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ProductType } from "@/types/product";
 import { supabase } from "@/libs/supabase/supabase";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import formatOrder from "@/utils/formatOrder";
+import ConfirmOrderModal from "@/components/ConfirmOrderModal";
+
+type CartRow = {
+  id: string;
+  quantity: number;
+  product: ProductType;
+};
+
+const currency = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
 
 const CartPage = () => {
-  const { items, removeFromCart } = useCart();
-  const [products, setProducts] = useState<ProductType[]>([]);
+  const { removeFromCart, updateQuantity } = useCart();
   const { user } = useAuth();
+
+  const [cartItems, setCartItems] = useState<CartRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState<"error" | "success" | "info">(
     "info"
   );
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      if (!user) return;
-      const { data, error } = await supabase
-        .from("cart_items")
-        .select("id, user_id, quantity, product:products(*)")
-        .eq("user_id", user.id);
-      if (error) return;
-      setProducts(data.map((item: any) => item.product));
-      console.log(data);
-    })();
-  }, [user, items]);
+  async function handleConfirmOrder() {
+    if (!user) {
+      showModal("Você precisa estar logado para confirmar o pedido.", "info");
+      return;
+    }
+
+    try {
+      setConfirmLoading(true);
+
+      const total = cartItems.reduce(
+        (acc, r) => acc + r.product.price * r.quantity,
+        0
+      );
+
+      const { data: order, error: orderErr } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          total,
+          status: "pending",
+        })
+        .select("id")
+        .single();
+
+      if (orderErr || !order)
+        throw orderErr || new Error("Falha ao criar pedido");
+
+      const itemsPayload = cartItems.map((r) => ({
+        order_id: order.id,
+        product_id: r.product.id,
+        product_name: r.product.name, // snapshot
+        unit_price: r.product.price, // snapshot
+        quantity: r.quantity,
+      }));
+
+      const { error: itemsErr } = await supabase
+        .from("order_items")
+        .insert(itemsPayload);
+
+      if (itemsErr) {
+        await supabase.from("orders").delete().eq("id", order.id);
+        throw itemsErr;
+      }
+
+      await supabase.from("cart_items").delete().eq("user_id", user.id);
+
+      await sendOrderForWhatsapp?.();
+
+      setConfirmOpen(false);
+      showModal("Pedido confirmado com sucesso!", "success");
+    } catch (e) {
+      console.error(e);
+      showModal("Falha ao confirmar o pedido.", "error");
+    } finally {
+      setConfirmLoading(false);
+    }
+  }
+
   const showModal = (
     message: string,
     type: "error" | "success" | "info" = "info"
@@ -44,6 +106,45 @@ const CartPage = () => {
     setModalOpen(true);
   };
 
+  useEffect(() => {
+    if (!user) return;
+    let isCancelled = false;
+
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("cart_items")
+        .select("id, quantity, product:products(*)")
+        .eq("user_id", user.id);
+
+      if (!isCancelled) {
+        if (error) {
+          console.error(error);
+          showModal("Não foi possível carregar o carrinho.", "error");
+        } else {
+          const rows = (data ?? []).map((r: any) => ({
+            id: r.id,
+            quantity: r.quantity,
+            product: r.product as ProductType,
+          })) as CartRow[];
+          setCartItems(rows);
+        }
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user]);
+
+  const total = useMemo(() => {
+    return cartItems.reduce(
+      (acc, row) => acc + (row.product?.price ?? 0) * (row.quantity ?? 0),
+      0
+    );
+  }, [cartItems]);
+
   const handleRemove = async (productId: string) => {
     setLoading(true);
     const { error } = await removeFromCart(productId);
@@ -52,20 +153,50 @@ const CartPage = () => {
       showModal("Erro ao remover do carrinho", "error");
       return;
     }
+    setCartItems((prev) => prev.filter((r) => r.product.id !== productId));
     showModal("Produto removido do carrinho", "success");
   };
 
-  //   const handleQuantityChange = (productId: string, quantity: number) => {
-  //     updateQuantity(productId, quantity);
-  //   };
+  const handleQuantityChange = async (productId: string, quantity: number) => {
+    if (quantity < 1) return;
+    setLoading(true);
+    const { error } = await updateQuantity(productId, quantity);
+    setLoading(false);
+    if (error) {
+      showModal("Erro ao modificar quantidade", "error");
+      return;
+    }
+    setCartItems((prev) =>
+      prev.map((r) => (r.product.id === productId ? { ...r, quantity } : r))
+    );
+  };
 
-  //   const total = items.reduce(
-  //     (acc, item) => acc + item.product.price * item.quantity,
-  //     0
-  //   );
+  const sendOrderForWhatsapp = () => {
+    const message = `${formatOrder({
+      nomeCliente: user?.user_metadata?.name ?? "",
+      emailCliente: user?.email ?? "",
+      produtos: cartItems.map(({ product, quantity }) => ({
+        nome: product.name,
+        quantidade: quantity,
+        preco: product.price,
+      })),
+    })}`;
+    const url = `https://api.whatsapp.com/send?phone=${
+      user?.user_metadata?.phone ?? ""
+    }&text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+  };
 
   return (
     <ProtectedRoute>
+      <ConfirmOrderModal
+        isOpen={confirmOpen}
+        onClose={() => !confirmLoading && setConfirmOpen(false)}
+        onConfirm={handleConfirmOrder}
+        items={cartItems}
+        loading={confirmLoading}
+        title="Confirmar pedido"
+      />
       {loading && <LoadingSpinner />}
       <FeedbackModal
         isOpen={modalOpen}
@@ -79,66 +210,64 @@ const CartPage = () => {
           Carrinho de Compras
         </h1>
 
-        {items.length === 0 ? (
+        {cartItems.length === 0 ? (
           <p className="text-lg text-muted-foreground">
             Seu carrinho está vazio.
           </p>
         ) : (
           <div className="flex flex-col gap-6">
-            {products.map((item) => (
+            {cartItems.map(({ id, product, quantity }) => (
               <div
-                key={item.id}
+                key={id}
                 className="flex flex-col md:flex-row items-start md:items-center justify-between border-b pb-4"
               >
                 <div className="flex items-center gap-4">
                   <Image
-                    src={item.image_url ? item.image_url : "/placeholder.jpg"}
-                    alt={item.name}
+                    src={product.image_url || "/placeholder.jpg"}
+                    alt={product.name}
                     width={100}
                     height={100}
                     className="rounded"
                   />
                   <div>
-                    <h2 className="text-lg font-semibold">{item.name}</h2>
+                    <h2 className="text-lg font-semibold">{product.name}</h2>
                     <p className="text-sm text-muted-foreground">
-                      {item.description}
+                      {product.description}
                     </p>
                     <p className="text-sm mt-1">
                       Preço:{" "}
                       <span className="font-semibold">
-                        R$ {item.price.toFixed(2)}
+                        {currency.format(product.price)}
                       </span>
                     </p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-4 mt-4 md:mt-0">
                   <div className="flex items-center border rounded overflow-hidden">
                     <button
-                      //   onClick={() =>
-                      //     handleQuantityChange(
-                      //       item.product_id,
-                      //       Math.max(1, item.quantity - 1)
-                      //     )
-                      //   }
+                      onClick={() =>
+                        handleQuantityChange(
+                          product.id,
+                          Math.max(1, quantity - 1)
+                        )
+                      }
                       className="px-2 py-1"
                     >
                       -
                     </button>
-                    <span className="px-3 py-1">
-                      {items.find((i) => i.product_id === item.id)?.quantity ||
-                        0}
-                    </span>
+                    <span className="px-3 py-1">{quantity}</span>
                     <button
-                      //   onClick={() =>
-                      //     handleQuantityChange(item.product_id, item.quantity + 1)
-                      //   }
+                      onClick={() =>
+                        handleQuantityChange(product.id, quantity + 1)
+                      }
                       className="px-2 py-1"
                     >
                       +
                     </button>
                   </div>
                   <button
-                    onClick={() => handleRemove(item.id)}
+                    onClick={() => handleRemove(product.id)}
                     className="text-red-600 text-sm"
                   >
                     Remover
@@ -146,13 +275,13 @@ const CartPage = () => {
                 </div>
               </div>
             ))}
+
             <div className="text-right mt-6">
               <p className="text-xl font-semibold">
-                Total: R${" "}
-                {products.reduce((acc, item) => acc + item.price, 0).toFixed(2)}
+                Total: {currency.format(total)}
               </p>
               <button
-                // onClick={clearCart}
+                onClick={() => setCartItems([])}
                 className="mt-2 text-sm text-red-600 underline"
               >
                 Esvaziar carrinho
@@ -160,6 +289,17 @@ const CartPage = () => {
             </div>
           </div>
         )}
+
+        <div className="flex w-full justify-end">
+          {cartItems.length > 0 && (
+            <button
+              onClick={() => setConfirmOpen(true)}
+              className="mt-6 px-6 py-3 bg-primary text-white rounded hover:bg-primary/90 transition"
+            >
+              Realizar pedido
+            </button>
+          )}
+        </div>
       </main>
       <Footer />
     </ProtectedRoute>

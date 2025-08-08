@@ -16,6 +16,7 @@ type CartItem = {
   product_id: string;
   user_id: string;
   quantity: number;
+
   // Você pode adicionar mais dados do produto aqui se quiser
 };
 
@@ -26,6 +27,10 @@ type CartContextType = {
     user: User
   ) => Promise<{ data: any; error: any }>;
   removeFromCart: (productId: string) => Promise<{ error: any }>;
+  updateQuantity: (
+    productId: string,
+    quantity: number
+  ) => Promise<{ data: any; error: any }>;
   //   updateQuantity: (productId: string, quantity: number) => void
   //   clearCart: () => void
 };
@@ -64,7 +69,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, [user]);
   const removeFromCart = async (productId: string) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("cart_items")
       .delete()
       .eq("product_id", productId);
@@ -74,27 +79,38 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setItems(data);
       }
     }
-    return { error };
+    return { data, error };
   };
 
-  //   const updateQuantity = (productId: string, quantity: number) => {
-  //     if (quantity <= 0) {
-  //       removeFromCart(productId)
-  //     } else {
-  //       setItems((prev) =>
-  //         prev.map((item) =>
-  //           item.productId === productId ? { ...item, quantity } : item
-  //         )
-  //       )
-  //     }
-  //   }
+  const updateQuantity = async (productId: string, quantity: number) => {
+    if (quantity <= 0 && productId.trim() !== "")
+      return {
+        data: [],
+        error: "Quantidade inválida ou produto não encontrado",
+      };
+    const { data, error } = await supabase
+      .from("cart_items")
+      .update({ quantity })
+      .eq("product_id", productId);
 
-  //   const clearCart = () => {
-  //     setItems([]);
-  //   };
+    if (!error) {
+      const { data } = await getCartItems();
+      if (data) {
+        setItems(data);
+      }
+    }
+
+    return { data, error };
+  };
+
+  const clearCart = () => {
+    setItems([]);
+  };
 
   return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart }}>
+    <CartContext.Provider
+      value={{ items, addToCart, removeFromCart, updateQuantity }}
+    >
       {children}
     </CartContext.Provider>
   );

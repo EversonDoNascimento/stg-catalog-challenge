@@ -8,13 +8,41 @@ import Footer from "@/components/Footer";
 import Image from "next/image";
 import Skeleton from "@/components/Skeleton";
 import { useParams } from "next/navigation";
+import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { User } from "@supabase/supabase-js";
+import FeedbackModal from "@/components/FeedbackModal";
 
 export default function ProductPage() {
   const { id } = useParams();
-
+  const user = useAuth()?.user;
+  const { addToCart } = useCart();
   const [product, setProduct] = useState<ProductType | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const [modalType, setModalType] = useState<"error" | "success" | "info">(
+    "info"
+  );
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const showModal = (
+    message: string,
+    type: "error" | "success" | "info" = "info"
+  ) => {
+    setModalMessage(message);
+    setModalType(type);
+    setModalOpen(true);
+  };
+  const handleAddToCart = async () => {
+    if (!product && !user) return;
+    setLoading(true);
+    const { error } = await addToCart(product as ProductType, user as User);
+    setLoading(false);
+    if (error) {
+      showModal("Erro ao adicionar ao carrinho", "error");
+      return;
+    }
+    showModal("Produto adicionado ao carrinho", "success");
+  };
   useEffect(() => {
     if (!id) return;
 
@@ -36,9 +64,14 @@ export default function ProductPage() {
 
   return (
     <>
+      <FeedbackModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        message={modalMessage}
+        type={modalType}
+      />
       <Header />
       <main className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-2 gap-10">
-        {/* Imagem */}
         <div className="w-full h-96 relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
           {loading ? (
             <Skeleton width="100%" height="100%" />
@@ -56,7 +89,6 @@ export default function ProductPage() {
           )}
         </div>
 
-        {/* Detalhes */}
         <div className="space-y-4">
           {loading ? (
             <>
@@ -78,9 +110,14 @@ export default function ProductPage() {
                   {product.description}
                 </p>
               )}
-              <button className="mt-6 px-6 py-3 bg-primary text-white rounded hover:bg-primary/90 transition">
-                Adicionar ao carrinho
-              </button>
+              {user && (
+                <button
+                  onClick={handleAddToCart}
+                  className="mt-6 px-6 py-3 bg-primary text-white rounded hover:bg-primary/90 transition"
+                >
+                  Adicionar ao carrinho
+                </button>
+              )}
             </>
           ) : (
             <p className="text-red-500">Produto não encontrado.</p>
