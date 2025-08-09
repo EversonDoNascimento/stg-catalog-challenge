@@ -20,6 +20,11 @@ O objetivo é demonstrar habilidades em **Next.js, TypeScript, Tailwind CSS e Su
 
 ---
 
+## ℹ️ Observações importantes
+
+Ao criar uma conta no sistema, será enviado um **e-mail de confirmação** para o endereço cadastrado.  
+⚠️ **É necessário acessar seu e-mail e ativar a conta** antes de realizar login.
+
 ## 🛠️ Como Rodar Localmente
 
 ```bash
