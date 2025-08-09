@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# STG Catalog Challenge
 
-## Getting Started
+## 📌 Descrição
 
-First, run the development server:
+O **STG Catalog Challenge** é um sistema completo de e-commerce desenvolvido como desafio técnico para a STG Company.  
+O projeto possui autenticação de usuários, catálogo de produtos, carrinho de compras e integração com WhatsApp para finalização do pedido.  
+O objetivo é demonstrar habilidades em **Next.js, TypeScript, Tailwind CSS e Supabase**, seguindo boas práticas de código e UI/UX.
+
+---
+
+## 🚀 Tecnologias Utilizadas
+
+- **Next.js** - Framework React para construção do frontend e rotas
+- **TypeScript** - Tipagem estática para maior segurança e escalabilidade
+- **Tailwind CSS** - Estilização rápida e responsiva
+- **Supabase** - Autenticação e banco de dados PostgreSQL
+- **Heroicons** - Ícones para UI
+- **Lucide React** - Ícones adicionais
+- **Pexels/Unsplash** - Imagens para os produtos
+
+---
+
+## 🛠️ Como Rodar Localmente
 
 ```bash
+# 1️⃣ Clone o repositório
+git clone https://github.com/EversonDoNascimento/stg-catalog-challenge.git
+
+# 2️⃣ Acesse a pasta do projeto
+cd stg-catalog-challenge
+
+# 3️⃣ Instale as dependências
+npm install
+
+# 4️⃣ Configure as variáveis de ambiente
+# Crie o arquivo .env e adicione:
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+# 5️⃣ Rode o projeto em ambiente de desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# 6️⃣ Acesse no navegador
+http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🤖 Uso de Inteligência Artificial
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Foi utilizada a **IA ChatGPT** para:
 
-## Learn More
+- Gerar componentes de interface em React/Next.js
+- Criar funções para autenticação e proteção de rotas
+- Gerar scripts SQL para criação e inserção de dados no banco
+- Sugerir melhorias de UI/UX
+- Revisar e otimizar código existente
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔗 Links
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+<!-- - **GitHub**: [https://github.com/usuario/stg-catalog-challenge](https://github.com/usuario/stg-catalog-challenge) -->
 
-## Deploy on Vercel
+- **Deploy (Vercel)**: [https://stg-catalog-challenge-swart.vercel.app/](https://stg-catalog-challenge-swart.vercel.app/)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ✅ Checklist de Funcionalidades
+
+### Autenticação
+
+- ✅ Login com e-mail/senha
+- ✅ Registro de novos usuários
+- ✅ Proteção de rotas
+- ✅ Logout funcional
+
+### Catálogo
+
+- ✅ Grid responsivo com +12 produtos
+- ✅ Busca/filtro por nome
+- ✅ Visualização detalhada do produto
+- ✅ Adicionar ao carrinho
+
+### Carrinho
+
+- ✅ Lista de produtos
+- ✅ Editar quantidades
+- ✅ Finalizar via WhatsApp
+
+### Integração com WhatsApp
+
+- ✅ Geração automática da mensagem formatada
+- ✅ Link wa.me
+- ✅ Limpar carrinho após envio
+
+---
+
+![home](./screens/1.png)
+![cart](./screens/2.png)
+![orders](./screens/3.png)
+![confirm order](./screens/5.png)
